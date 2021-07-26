@@ -7,9 +7,13 @@ import discord
 intents = discord.Intents.default()
 intents.members = True
 
-TOKEN = config.botToken
+import os
+from dotenv import load_dotenv
 
-initial_extensions = ['cogs.moderation', 'cogs.misc', 'cogs.suggestions', 'cogs.eventlogging', 'cogs.reddit',
+load_dotenv()
+TOKEN = os.getenv('TOKEN')
+
+initial_extensions = ['cogs.moderation', 'cogs.misc', 'cogs.suggestions', 'cogs.eventlogging',
                       'cogs.autoroles', 'cogs.trello', 'cogs.tekken', 'cogs.questions']
 
 bot = commands.Bot(command_prefix='$', case_insensitive=False, description="MG Bot", intents=intents,

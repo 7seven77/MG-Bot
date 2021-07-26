@@ -3,8 +3,18 @@ from boto3.dynamodb.conditions import Key
 from datetime import datetime
 import random
 
-session = boto3.Session(profile_name='tarek')
-dynamodb = session.client('dynamodb')
+session = boto3.Session()
+
+
+dynamodb = boto3.client('dynamodb', endpoint_url='http://localhost:8000', 
+         aws_access_key_id="ACCESS_ID",
+         aws_secret_access_key= "ACCESS_KEY", region_name='us-west-2')
+
+sessionResource = session.resource('dynamodb', endpoint_url='http://localhost:8000', 
+         aws_access_key_id="ACCESS_ID",
+         aws_secret_access_key= "ACCESS_KEY", region_name='us-west-2')
+
+
 customTableName = 'mg_custom'
 suggestionsTableName = 'mg_suggestions'
 questionsTableName = 'mg_questions'
@@ -325,7 +335,7 @@ def init():
 
 
 def add_custom_command(command, value):
-    table = session.resource('dynamodb').Table(customTableName)
+    table = sessionResource.Table(customTableName)
     if value == "":
         table.delete_item(
             Key={
@@ -341,7 +351,7 @@ def add_custom_command(command, value):
 
 
 def get_custom_command(command):
-    table = session.resource('dynamodb').Table(customTableName)
+    table = sessionResource.Table(customTableName)
     response = table.get_item(
         Key={
             'command': command
@@ -356,7 +366,7 @@ def get_custom_command(command):
 
 
 def add_new_suggestion(message, date, msg_id):
-    table = session.resource('dynamodb').Table(suggestionsTableName)
+    table = sessionResource.Table(suggestionsTableName)
     table.put_item(Item={
         'user_id': str(message.author.id),
         'date': str(date),
@@ -367,7 +377,7 @@ def add_new_suggestion(message, date, msg_id):
 
 
 def get_latest_suggestion(message):
-    table = session.resource('dynamodb').Table(suggestionsTableName)
+    table = sessionResource.Table(suggestionsTableName)
     last_suggestion = table.query(
         KeyConditionExpression=Key('user_id').eq(str(message.author.id))
     )
@@ -377,7 +387,7 @@ def get_latest_suggestion(message):
 
 
 def get_all_suggestion(user_id):
-    table = session.resource('dynamodb').Table(suggestionsTableName)
+    table = sessionResource.Table(suggestionsTableName)
     last_suggestion = table.query(
         KeyConditionExpression=Key('user_id').eq(user_id)
     )
@@ -385,7 +395,7 @@ def get_all_suggestion(user_id):
 
 
 def get_suggestion(msg_id):
-    table = session.resource('dynamodb').Table(suggestionsTableName)
+    table = sessionResource.Table(suggestionsTableName)
     suggestion = table.query(
         IndexName='msg_id_index',
         KeyConditionExpression=Key('msg_id').eq(msg_id)
@@ -394,7 +404,7 @@ def get_suggestion(msg_id):
 
 
 def add_anon_question(message, date, msg_id):
-    table = session.resource('dynamodb').Table(anonQuestionsTableName)
+    table = sessionResource.Table(anonQuestionsTableName)
     table.put_item(Item={
         'user_id': str(message.author.id),
         'date': str(date),
@@ -405,7 +415,7 @@ def add_anon_question(message, date, msg_id):
 
 
 def get_latest_anon_question(message):
-    table = session.resource('dynamodb').Table(anonQuestionsTableName)
+    table = sessionResource.Table(anonQuestionsTableName)
     last_question = table.query(
         KeyConditionExpression=Key('user_id').eq(str(message.author.id))
     )
@@ -415,7 +425,7 @@ def get_latest_anon_question(message):
 
 
 def get_all_anon_questions(user_id):
-    table = session.resource('dynamodb').Table(anonQuestionsTableName)
+    table = sessionResource.Table(anonQuestionsTableName)
     questions = table.query(
         KeyConditionExpression=Key('user_id').eq(user_id)
     )
@@ -423,7 +433,7 @@ def get_all_anon_questions(user_id):
 
 
 def get_anon_question(msg_id):
-    table = session.resource('dynamodb').Table(anonQuestionsTableName)
+    table = sessionResource.Table(anonQuestionsTableName)
     question = table.query(
         IndexName='msg_id_index',
         KeyConditionExpression=Key('msg_id').eq(msg_id)
@@ -434,7 +444,7 @@ def get_anon_question(msg_id):
 def get_all_custom():
     result = []
     current = ""
-    table = session.resource('dynamodb').Table(customTableName)
+    table = sessionResource.Table(customTableName)
     items = table.scan()
     for custom in items['Items']:
         addition = "```" + custom['command'] + "\t" + custom['value'] + "```"
@@ -447,7 +457,7 @@ def get_all_custom():
 
 
 def new_question(question, choices, answer_num):
-    table = session.resource('dynamodb').Table(questionsTableName)
+    table = sessionResource.Table(questionsTableName)
     question_id = datetime.now().microsecond
     table.put_item(Item={
         'id': question_id,
@@ -460,7 +470,7 @@ def new_question(question, choices, answer_num):
 
 def get_answer(question_id):
     try:
-        table = session.resource('dynamodb').Table(questionsTableName)
+        table = sessionResource.Table(questionsTableName)
         response = table.get_item(
             Key={
                 'id': question_id
@@ -473,7 +483,7 @@ def get_answer(question_id):
 
 
 def delete_question(question_id):
-    table = session.resource('dynamodb').Table(questionsTableName)
+    table = sessionResource.Table(questionsTableName)
     table.delete_item(
         Key={
             'id': question_id,
@@ -483,7 +493,7 @@ def delete_question(question_id):
 
 
 def increment_score(author_id, guild_id):
-    table = session.resource('dynamodb').Table(scoresTableName)
+    table = sessionResource.Table(scoresTableName)
     user_id = str(guild_id) + "_" + str(author_id)
     try:
         response = table.get_item(
@@ -506,7 +516,7 @@ def increment_score(author_id, guild_id):
 
 
 def get_score(author_id, guild_id):
-    table = session.resource('dynamodb').Table(scoresTableName)
+    table = sessionResource.Table(scoresTableName)
     user_id = str(guild_id) + "_" + str(author_id)
     try:
         response = table.get_item(
@@ -524,7 +534,7 @@ def get_score(author_id, guild_id):
 
 
 def new_suggestion_ban(user_id):
-    table = session.resource('dynamodb').Table(suggestionBansTableName)
+    table = sessionResource.Table(suggestionBansTableName)
     table.put_item(Item={
         'user_id': str(user_id),
     })
@@ -533,7 +543,7 @@ def new_suggestion_ban(user_id):
 
 def is_suggestion_banned(user_id):
     try:
-        table = session.resource('dynamodb').Table(suggestionBansTableName)
+        table = sessionResource.Table(suggestionBansTableName)
         response = table.get_item(
             Key={
                 'user_id': str(user_id)
@@ -546,7 +556,7 @@ def is_suggestion_banned(user_id):
 
 
 def suggestion_unban(user_id):
-    table = session.resource('dynamodb').Table(suggestionBansTableName)
+    table = sessionResource.Table(suggestionBansTableName)
     table.delete_item(
         Key={
             'user_id': user_id,
@@ -556,7 +566,7 @@ def suggestion_unban(user_id):
 
 
 def anon_questions_ban(user_id):
-    table = session.resource('dynamodb').Table(anonQuestionBansTableName)
+    table = sessionResource.Table(anonQuestionBansTableName)
     table.put_item(Item={
         'user_id': str(user_id),
     })
@@ -565,7 +575,7 @@ def anon_questions_ban(user_id):
 
 def is_anon_questions_banned(user_id):
     try:
-        table = session.resource('dynamodb').Table(anonQuestionBansTableName)
+        table = sessionResource.Table(anonQuestionBansTableName)
         response = table.get_item(
             Key={
                 'user_id': str(user_id)
@@ -578,7 +588,7 @@ def is_anon_questions_banned(user_id):
 
 
 def anon_questions_unban(user_id):
-    table = session.resource('dynamodb').Table(anonQuestionBansTableName)
+    table = sessionResource.Table(anonQuestionBansTableName)
     table.delete_item(
         Key={
             'user_id': user_id,
@@ -588,7 +598,7 @@ def anon_questions_unban(user_id):
 
 
 def add_phrase(phrase, value):
-    table = session.resource('dynamodb').Table(phraseTableName)
+    table = sessionResource.Table(phraseTableName)
     if value == "":
         table.delete_item(
             Key={
@@ -612,7 +622,7 @@ def get_phrase(phrase):
 
 
 def scan_for_phrases():
-    table = session.resource('dynamodb').Table(phraseTableName)
+    table = sessionResource.Table(phraseTableName)
     response = table.scan()
     phrase_cache.clear()
     for i in response['Items']:
@@ -620,7 +630,7 @@ def scan_for_phrases():
 
 
 def scan_for_giveaways():
-    table = session.resource('dynamodb').Table(giveawaysTableName)
+    table = sessionResource.Table(giveawaysTableName)
     response = table.scan()
     giveaways_cache.clear()
     for i in response['Items']:
@@ -628,7 +638,7 @@ def scan_for_giveaways():
 
 
 def scan_for_roles():
-    table = session.resource('dynamodb').Table(rolesTableName)
+    table = sessionResource.Table(rolesTableName)
     response = table.scan()
     roles_cache.clear()
     for i in response['Items']:
@@ -636,7 +646,7 @@ def scan_for_roles():
 
 
 def new_giveaway(giveaway_id, end_date, prize):
-    table = session.resource('dynamodb').Table(giveawaysTableName)
+    table = sessionResource.Table(giveawaysTableName)
     table.put_item(Item={
         'giveaway_id': str(giveaway_id),
         'end_date': end_date,
@@ -651,7 +661,7 @@ def new_giveaway_entry(user_id, giveaway_id):
     date = datetime.strptime(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
     if end_date < date:
         return False
-    table = session.resource('dynamodb').Table(giveawayEntriesTableName)
+    table = sessionResource.Table(giveawayEntriesTableName)
     table.put_item(Item={
         'giveaway_id': str(giveaway_id),
         'user_id': str(user_id)
@@ -660,7 +670,7 @@ def new_giveaway_entry(user_id, giveaway_id):
 
 
 def delete_giveaway_entry(user_id, giveaway_id):
-    table = session.resource('dynamodb').Table(giveawayEntriesTableName)
+    table = sessionResource.Table(giveawayEntriesTableName)
     table.delete_item(
         Key={
             'giveaway_id': str(giveaway_id),
@@ -671,7 +681,7 @@ def delete_giveaway_entry(user_id, giveaway_id):
 
 
 def end_giveaway(giveaway_id):
-    table = session.resource('dynamodb').Table(giveawaysTableName)
+    table = sessionResource.Table(giveawaysTableName)
     table.delete_item(Key={
         'giveaway_id': str(giveaway_id)
     })
@@ -685,7 +695,7 @@ def end_giveaway(giveaway_id):
 
 def get_all_entries(giveaway_id):
     entries_list = []
-    table = session.resource('dynamodb').Table(giveawayEntriesTableName)
+    table = sessionResource.Table(giveawayEntriesTableName)
     response = table.scan(
         FilterExpression=Key('giveaway_id').eq(str(giveaway_id))
     )
@@ -703,7 +713,7 @@ def get_role(emoji):
 
 
 def add_role_emoji(emoji, role):
-    table = session.resource('dynamodb').Table(rolesTableName)
+    table = sessionResource.Table(rolesTableName)
     table.put_item(Item={
         'emoji': emoji,
         'role': role
@@ -713,7 +723,7 @@ def add_role_emoji(emoji, role):
 
 
 def delete_emoji_role(emoji):
-    table = session.resource('dynamodb').Table(rolesTableName)
+    table = sessionResource.Table(rolesTableName)
     table.delete_item(
         Key={
             'emoji': emoji
